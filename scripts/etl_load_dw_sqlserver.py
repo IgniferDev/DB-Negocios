@@ -8,8 +8,8 @@ from sqlalchemy import create_engine
 
 load_dotenv()
 
-SRC = {"host": os.getenv("SRC_HOST", "10.147.17.5,1433"), "user": os.getenv("SRC_USER","etl_user"), "pass": os.getenv("SRC_PASS","TuPassword123"), "db": os.getenv("SRC_DB","PROJECT_MANAGE")}
-DST = {"host": os.getenv("DST_HOST", "10.147.17.6,1433"), "user": os.getenv("DST_USER","etl_user"), "pass": os.getenv("DST_PASS","TuPassword123"), "db": os.getenv("DST_DB","PROJECT_SUPPORT_SYSTEM")}
+SRC = {"host": os.getenv("SRC_HOST", "172.24.56.35,1433"), "user": os.getenv("SRC_USER","Inteligencia"), "pass": os.getenv("SRC_PASS","Rock2213#"), "db": os.getenv("SRC_DB","PROJECT_MANAGE")}
+DST = {"host": os.getenv("DST_HOST", "172.24.84.67,1433"), "user": os.getenv("DST_USER","admin_kiry2"), "pass": os.getenv("DST_PASS","1234"), "db": os.getenv("DST_DB","PROJECT_SUPPORT_SYSTEM")}
 DRIVER = "ODBC Driver 17 for SQL Server"
 
 def create_sqlalchemy_engine(host, user, password, database):
