@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<h4>Sección del cubo</h4>
+<p>Años seleccionados: {{ years }} / Regiones seleccionadas (por defecto todas)</p>
+
+<div class="table-responsive mb-3">{{ table_html | safe }}</div>
+
+{% for g in graphs %}
+  <div id="g{{ loop.index0 }}" style="height:300px;"></div>
+  <script>
+    var fig = {{ g | tojson | safe }};
+    Plotly.newPlot('g{{ loop.index0 }}', fig.data, fig.layout);
+  </script>
+{% endfor %}
+{% endblock %}

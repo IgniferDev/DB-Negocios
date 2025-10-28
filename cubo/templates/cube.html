@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block content %}
+<h4>Cubo completo (Producto x Región x Año/Trimestre)</h4>
+<p>Visualización como tabla pivot (MultiIndex)</p>
+<div class="table-responsive">{{ table_html | safe }}</div>
+{% endblock %}

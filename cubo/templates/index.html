@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<h3>Funciones en crearCubo.py</h3>
+<ul>
+  {% for name, doc in funcs_crear %}
+  <li><strong>{{name}}</strong> — {{doc}}</li>
+  {% endfor %}
+</ul>
+
+<h3 class="mt-3">Funciones en operacionesCubo.py</h3>
+<ul>
+  {% for name, doc in funcs_op %}
+  <li><strong>{{name}}</strong> — {{doc}}</li>
+  {% endfor %}
+</ul>
+
+<p class="mt-3">Usa las pestañas arriba para visualizar cara, sección, cubo completo o inspeccionar una celda.</p>
+{% endblock %}

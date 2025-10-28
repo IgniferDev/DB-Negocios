@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<h4>Datos de la celda</h4>
+<form class="row g-2 mb-3" method="get">
+  <div class="col-auto">
+    <label>Producto</label>
+    <input name="producto" class="form-control" value="{{producto}}">
+  </div>
+  <div class="col-auto">
+    <label>Región</label>
+    <input name="region" class="form-control" value="{{region}}">
+  </div>
+  <div class="col-auto">
+    <label>Año</label>
+    <input name="year" class="form-control" value="{{year}}">
+  </div>
+  <div class="col-auto">
+    <label>Trimestre</label>
+    <input name="trimestre" class="form-control" value="{{trimestre}}">
+  </div>
+  <div class="col-auto align-self-end">
+    <button class="btn btn-primary">Filtrar</button>
+  </div>
+</form>
+
+<p><strong>Totales:</strong> Ventas = {{ sum_ventas }} | Cantidad = {{ sum_cantidad }}</p>
+<div class="table-responsive">{{ table_html | safe }}</div>
+{% endblock %}
