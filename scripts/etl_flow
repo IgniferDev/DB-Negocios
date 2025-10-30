@@ -1,0 +1,38 @@
+digraph ETL_Flow {
+	fontsize=10 rankdir=LR
+	SRC [label="SOURCE
+PROJECT_MANAGE
+(Ponki)
+Tables: employee, client, team, project, time_log, financials, issue" fillcolor="#EFEFEF" shape=folder style=filled]
+	ETL [label="ETL (Ignifer)
+Python: pyodbc / SQLAlchemy / pandas" fillcolor="#FFF2CC" shape=box style=filled]
+	TRANS [label="TRANSFORM
+Aggregations & Cleans" fillcolor="#D9EAD3" shape=box3d style=filled]
+	DIM [label="DIMENSIONS
+upsert via MERGE
+(dim_client, dim_team, dim_project, dim_date)" fillcolor="#CFE2F3" shape=cylinder style=filled]
+	FACT [label="FACTS
+fact_project
+(DELETE+INSERT)" fillcolor="#F4CCCC" shape=cylinder style=filled]
+	AUDIT [label="AUDIT
+etl_audit" fillcolor="#D9D2E9" shape=note style=filled]
+	DST [label="DW
+PROJECT_SUPPORT_SYSTEM
+(Kiry)" fillcolor="#EFEFEF" shape=folder style=filled]
+	SRC -> ETL [label="extract
+(pandas.read_sql / pyodbc)"]
+	ETL -> TRANS [label="transform
+(agg: hours, cost, revenue, errors)"]
+	TRANS -> DIM [label="upsert dims
+MERGE via #tmp_*"]
+	TRANS -> FACT [label="build df_fact
+rows = [(project_id, client_id, ...)]"]
+	FACT -> DST [label="load facts
+executemany (fast_executemany)"]
+	DIM -> DST [label="load dims
+MERGE"]
+	ETL -> AUDIT [label="record run
+insert etl_audit"]
+	fontsize=9 label="Diagrama de flujo ETL — Extract → Transform → Load
+Credenciales en .env (python-dotenv). Date range ±30d for dim_date."
+}

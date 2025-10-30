@@ -15,3 +15,5 @@ def test_connection(server, database, username, password):
 test_connection("172.24.56.35,1433", "PROJECT_MANAGE", "Inteligencia", "Rock2213#")
 # Base de datos 2 (Laptop B)
 test_connection("172.24.84.67,1433", "PROJECT_SUPPORT_SYSTEM", "admin_kiry2", "1234")
+
+

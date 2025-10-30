@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Consulta Cubo OLAP</title>
+  <style>
+    :root{
+      --bg:#f4f7fb;
+      --card:#ffffff;
+      --muted:#6b7280;
+      --accent:#2563eb;
+      --accent-2:#06b6d4;
+      --surface-shadow: 0 6px 18px rgba(20,34,70,0.06);
+      --radius:12px;
+      --radius-sm:8px;
+      --max-width:980px;
+      --gap:18px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+
+    html,body{height:100%;}
+    body{
+      margin:0;
+      background:linear-gradient(180deg,var(--bg),#eef6ff);
+      color:#0f172a;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      padding:30px 20px;
+      display:flex;
+      justify-content:center;
+    }
+
+    .wrap{
+      width:100%;
+      max-width:var(--max-width);
+    }
+
+    header{
+      display:flex;
+      align-items:center;
+      gap:16px;
+      margin-bottom:20px;
+    }
+
+    .logo{
+      width:56px;height:56px;border-radius:10px;display:inline-grid;place-items:center;background:linear-gradient(135deg,var(--accent),var(--accent-2));box-shadow:0 6px 18px rgba(37,99,235,0.16);color:white;font-weight:700;font-size:20px;
+    }
+
+    h1{font-size:20px;margin:0}
+    p.lead{margin:0;color:var(--muted);font-size:14px}
+
+    .grid{
+      display:grid;
+      grid-template-columns:1fr 360px;
+      gap:var(--gap);
+      align-items:start;
+    }
+
+    /* Card with forms */
+    .card{
+      background:var(--card);
+      border-radius:var(--radius);
+      padding:18px;
+      box-shadow:var(--surface-shadow);
+    }
+
+    .forms{
+      display:grid;
+      gap:12px;
+    }
+
+    form.single{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      background:linear-gradient(180deg,rgba(3,105,161,0.02),transparent);
+      padding:12px;border-radius:var(--radius-sm);border:1px solid rgba(15,23,42,0.04);
+    }
+
+    label{display:block;font-weight:600;font-size:13px;color:#0f172a;margin-bottom:6px}
+    .field{
+      flex:1;min-width:0;display:flex;flex-direction:column;
+    }
+
+    input[type="text"], input[type="search"]{
+      border:1px solid #e6eef8;border-radius:8px;padding:10px 12px;font-size:14px;outline:none;transition:box-shadow .15s, border-color .15s;background:white
+    }
+    input[type="text"]:focus, input[type="search"]:focus{box-shadow:0 6px 18px rgba(37,99,235,0.08);border-color:var(--accent)}
+
+    .btn{
+      background:var(--accent);color:white;border:none;padding:10px 14px;border-radius:8px;cursor:pointer;font-weight:600;white-space:nowrap
+    }
+    .btn.secondary{background:#f3f4f6;color:#0f172a;border:1px solid rgba(15,23,42,0.06)}
+    .btn:hover{transform:translateY(-1px)}
+
+    .small{font-size:13px;color:var(--muted)}
+
+    /* Right column: quick actions + message */
+    aside .card{padding:14px}
+    .mensaje{
+      background:#fff4f4;color:#7f1d1d;padding:10px;border-radius:8px;border:1px solid rgba(127,29,29,0.06);font-weight:700;margin-bottom:12px
+    }
+
+    /* Results */
+    .results{
+      margin-top:18px;background:transparent;
+    }
+
+    table{width:100%;border-collapse:collapse;background:white;border-radius:8px;overflow:hidden;box-shadow:var(--surface-shadow)}
+    thead th{background:linear-gradient(180deg,#f8fafc,#eef3ff);font-weight:700;padding:12px;text-align:left;border-bottom:1px solid #e6eef8}
+    tbody td{padding:10px;border-bottom:1px solid #f1f5f9;font-size:14px}
+    tbody tr:nth-child(even){background:linear-gradient(90deg,transparent,rgba(2,6,23,0.01))}
+
+    .table-wrap{overflow:auto;border-radius:8px}
+
+    /* Responsive */
+    @media (max-width:920px){
+      .grid{grid-template-columns:1fr}
+      aside{order:2}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">OL</div>
+      <div>
+        <h1>Consulta Cubo OLAP</h1>
+        <p class="lead">Busca horarios, docentes y materias de forma rápida. (No se cambió la lógica — solo diseño)</p>
+      </div>
+    </header>
+
+    <div class="grid">
+      <main>
+        <section class="card">
+
+          {% if mensaje %}
+            <div class="mensaje">{{ mensaje }}</div>
+          {% endif %}
+
+          <div class="forms">
+            <form method="post" class="single">
+              <div class="field">
+                <label for="docente">Consulta por docente</label>
+                <input id="docente" name="docente" type="text" placeholder="Ej. Juan Pérez" aria-label="docente">
+                <span class="small">Busca por nombre completo o parcial.</span>
+              </div>
+              <button class="btn" type="submit" name="buscar_docente">Buscar</button>
+            </form>
+
+            <form method="post" class="single">
+              <div class="field">
+                <label for="materia">Consulta por materia</label>
+                <input id="materia" name="materia" type="text" placeholder="Ej. Álgebra Lineal" aria-label="materia">
+                <span class="small">También funciona con palabras clave de la materia.</span>
+              </div>
+              <button class="btn" type="submit" name="buscar_materia">Buscar</button>
+            </form>
+
+            <form method="post" class="single">
+              <div class="field">
+                <label for="nrc">Consulta por NRC</label>
+                <input id="nrc" name="nrc" type="text" placeholder="Ej. 12345" aria-label="nrc">
+                <span class="small">Introduce el NRC exacto para mejores resultados.</span>
+              </div>
+              <button class="btn" type="submit" name="buscar_nrc">Buscar</button>
+            </form>
+
+            <form method="post" class="single">
+              <div class="field">
+                <label for="clave">Consulta por clave de materia</label>
+                <input id="clave" name="clave" type="text" placeholder="Ej. MAT101" aria-label="clave">
+                <span class="small">Clave de materia (por ejemplo: MAT101).</span>
+              </div>
+              <button class="btn" type="submit" name="buscar_clave">Buscar</button>
+            </form>
+
+            <form method="post" class="single">
+              <div class="field">
+                <label>&nbsp;</label>
+                <span class="small">Ver todo el cubo — útil para revisión completa.</span>
+              </div>
+              <button class="btn secondary" type="submit" name="mostrar_todo">Mostrar todo</button>
+            </form>
+          </div>
+
+        </section>
+
+        {% if result is not none %}
+          <section class="results">
+            <h3>Resultados</h3>
+            <div class="table-wrap card" style="padding:12px;">
+              <table aria-live="polite">
+                <thead>
+                  <tr>{% for col in result.columns %}<th>{{ col }}</th>{% endfor %}</tr>
+                </thead>
+                <tbody>
+                  {% for row in result.values %}
+                    <tr>{% for val in row %}<td>{{ val }}</td>{% endfor %}</tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        {% endif %}
+
+      </main>
+
+      <aside>
+        <div class="card">
+          <strong>Consejos rápidos</strong>
+          <ul style="margin-top:8px;color:var(--muted);padding-left:18px;line-height:1.6">
+            <li>Usa nombres parciales (ej. "Pérez") para resultados amplios.</li>
+            <li>El campo NRC debe ser exacto para coincidencias precisas.</li>
+            <li>Si no hay resultados, prueba eliminar filtros o revisar ortografía.</li>
+          </ul>
+        </div>
+      </aside>
+
+    </div>
+  </div>
+</body>
+</html>
