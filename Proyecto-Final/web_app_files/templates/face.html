@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<h4>Cara del cubo: Año {{year}} - Trimestre {{trimestre}}</h4>
+
+<form method="get" class="row g-2 mb-3">
+  <div class="col-auto">
+    <label>Año</label>
+    <input name="year" class="form-control" value="{{year}}">
+  </div>
+  <div class="col-auto">
+    <label>Trimestre</label>
+    <input name="trimestre" class="form-control" value="{{trimestre}}">
+  </div>
+  <div class="col-auto align-self-end">
+    <button class="btn btn-primary">Actualizar</button>
+  </div>
+</form>
+
+<div>
+  <h5>Tabla (Producto x Región)</h5>
+  <div class="table-responsive">{{ table_html | safe }}</div>
+</div>
+
+<div id="graph" style="height:420px;"></div>
+<script>
+  var fig = {{ graphJSON | tojson | safe }};
+  Plotly.newPlot('graph', fig.data, fig.layout);
+</script>
+
+{% endblock %}

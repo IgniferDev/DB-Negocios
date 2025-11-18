@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Cubo OLAP — Visual</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="/static/style.css" />
+  <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+</head>
+<body>
+  <nav style="display:flex; gap:12px; align-items:center; margin-bottom:16px;">
+    <a href="/" style="font-weight:700; font-size:18px;">DSS</a>
+    <a href="/dashboard">Dashboard</a>
+    <a href="/cube">Cubo OLAP</a>
+    <a href="/bsc">Balanced Scorecard</a>
+    <a href="/">Predict</a>
+  </nav>
+
+  <div class="header">
+    <div>
+      <div class="title">Cubo OLAP — Interactivo</div>
+      <div class="subtitle">Face / Section / Cell — explora la información</div>
+    </div>
+    <div class="small">Fuente: fact_project + dim_*</div>
+  </div>
+
+  <div class="card" style="margin-bottom:12px;">
+    <label>Dim fila:
+      <select id="dim_row"><option value="project">Project</option><option value="team">Team</option></select>
+    </label>
+    <label>Dim col:
+      <select id="dim_col"><option value="year">Year</option><option value="month">Month</option></select>
+    </label>
+    <label>Medida:
+      <select id="measure"><option value="total_hours">Total Hours</option><option value="total_cost">Total Cost</option><option value="total_revenue">Revenue</option></select>
+    </label>
+    <button onclick="loadFace()">Ver Face</button>
+  </div>
+
+  <div class="card" id="face_container">
+    <div id="face_pre">Sin datos — pulsa Ver Face</div>
+    <div id="face_chart" style="height:420px;"></div>
+    <div id="face_table" style="margin-top:12px;"></div>
+  </div>
+
+  <div class="card" style="margin-top:12px;">
+    <h4>Section / Slice</h4>
+    <label>Año: <input id="year" value=""></label>
+    <label>Team id: <input id="team_id" value=""></label>
+    <label>Project id: <input id="project_id" value=""></label>
+    <button onclick="loadSection()">Cargar Section</button>
+    <div id="section_table" style="margin-top:8px;"></div>
+  </div>
+
+  <div class="card" style="margin-top:12px;">
+    <h4>Cell — datos soporte (time_log)</h4>
+    <label>Project id: <input id="cell_project" value=""></label>
+    <label>Año: <input id="cell_year" value=""></label>
+    <button onclick="loadCell()">Cargar Celda</button>
+    <div id="cell_table" style="margin-top:8px;"></div>
+  </div>
+
+  <p style="margin-top:12px;"><a href="/dashboard">Dashboard</a> | <a href="/">Predict</a></p>
+
+<script>
+function jsonToTable(data, columns){
+  if(!data || data.length===0) return '<div class="small">Sin datos</div>';
+  let cols = columns || Object.keys(data[0]);
+  let html = '<table style="width:100%; border-collapse:collapse;"><thead><tr>';
+  for(let c of cols) html += `<th style="padding:8px;border-bottom:1px solid #eef2f7;text-align:left">${c}</th>`;
+  html += '</tr></thead><tbody>';
+  for(let r of data){
+    html += '<tr>';
+    for(let c of cols){
+      let v = r[c];
+      if(v === null || v === undefined) v='';
+      html += `<td style="padding:8px;border-bottom:1px solid #eef2f7">${v}</td>`;
+    }
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  return html;
+}
+
+async function loadFace(){
+  document.getElementById('face_pre').textContent = "Cargando...";
+  const dr = document.getElementById('dim_row').value;
+  const dc = document.getElementById('dim_col').value;
+  const m = document.getElementById('measure').value;
+  const res = await fetch(`/api/cube/face?dim_row=${dr}&dim_col=${dc}&measure=${m}`);
+  const data = await res.json();
+  if(!data || data.length===0){
+    document.getElementById('face_pre').textContent='No hay datos para esa selección.';
+    document.getElementById('face_chart').innerHTML = '';
+    document.getElementById('face_table').innerHTML = '';
+    return;
+  }
+  document.getElementById('face_pre').textContent = '';
+  // chart
+  const groups = {};
+  data.forEach(r=>{
+    const row = r.dim_row || 'ALL';
+    const col = r.dim_col || 'ALL';
+    groups[row] = groups[row] || {};
+    groups[row][col] = r.value;
+  });
+  const cols = [...new Set(data.map(d=>d.dim_col))].sort();
+  const rows = Object.keys(groups);
+  const traces = cols.map(c=> ({ x: rows, y: rows.map(r=> groups[r][c] || 0), name: String(c), type:'bar' }) );
+  Plotly.react('face_chart', traces, {barmode:'group', title:`Face: ${dr} x ${dc}`, margin:{t:40}});
+  // table representation (flat)
+  document.getElementById('face_table').innerHTML = jsonToTable(data, ['dim_row','dim_col','value']);
+}
+
+async function loadSection(){
+  const year = document.getElementById('year').value;
+  const team = document.getElementById('team_id').value;
+  const proj = document.getElementById('project_id').value;
+  const params = new URLSearchParams();
+  if(year) params.append('year',year);
+  if(team) params.append('team_id',team);
+  if(proj) params.append('project_id',proj);
+  const res = await fetch(`/api/cube/section?${params.toString()}`);
+  const data = await res.json();
+  document.getElementById('section_table').innerHTML = jsonToTable(data, ['project_id','project_name','year','total_hours','total_cost','total_revenue','total_errors']);
+}
+
+async function loadCell(){
+  const p = document.getElementById('cell_project').value;
+  const y = document.getElementById('cell_year').value;
+  if(!p || !y){ alert('Project id y year requeridos'); return; }
+  const res = await fetch(`/api/cube/cell?project_id=${p}&year=${y}`);
+  const data = await res.json();
+  // show time_log rows as table
+  document.getElementById('cell_table').innerHTML = jsonToTable(data, ['log_date','employee_id','employee_name','hours','cost']);
+}
+</script>
+</body>
+</html>

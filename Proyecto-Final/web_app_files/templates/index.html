@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <title>OLAP App - Predict</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body { font-family: Arial, Helvetica, sans-serif; margin: 24px; }
+    label { display:block; margin-top:8px; }
+    input[type="number"]{ width:140px; }
+    pre { background:#f6f6f6; padding:12px; border-radius:6px; }
+    .ok { color: green }
+    .err { color: red }
+  </style>
+</head>
+<body>
+  <h1>OLAP App — Predict Tool</h1>
+
+  <section>
+    <h2>Probar modelo Rayleigh</h2>
+    <p>Introduce horas estimadas del proyecto y pulsa <strong>Predecir</strong>.</p>
+
+    <label>Horas del proyecto:
+      <input id="hours" type="number" min="0" value="1200" />
+    </label>
+
+    <label>API Key:
+      <input id="token" type="text" value="mi_token_seguro" />
+    </label>
+
+    <label>Usuario (header X-USER):
+      <input id="user" type="text" value="fer" />
+    </label>
+
+    <button id="btn">Predecir</button>
+
+    <h3>Respuesta</h3>
+    <pre id="output">Sin ejecutar</pre>
+  </section>
+
+  <script>
+    document.getElementById('btn').addEventListener('click', async () => {
+      const hours = document.getElementById('hours').value;
+      const token = document.getElementById('token').value;
+      const user = document.getElementById('user').value;
+      const out = document.getElementById('output');
+      out.textContent = "Enviando petición...";
+      try {
+        const resp = await fetch('/predict', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-KEY': token,
+            'X-USER': user
+          },
+          body: JSON.stringify({ project_hours: Number(hours) })
+        });
+        const json = await resp.json();
+        if (!resp.ok) {
+          out.innerHTML = "Error: " + (json.error || resp.status) ;
+          out.className = "err";
+        } else {
+          out.className = "ok";
+          out.textContent = JSON.stringify(json, null, 2);
+        }
+      } catch (e) {
+        out.className = "err";
+        out.textContent = "Fallo en fetch: " + e;
+      }
+    });
+  </script>
+</body>
+</html>
