@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DSS - Software Intelligence</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { background-color: #f4f6f9; }
+        .card { border: none; shadow: 0 0 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .kpi-card { border-left: 5px solid #0d6efd; }
+        .kpi-value { font-size: 2rem; font-weight: bold; color: #333; }
+        .sidebar { height: 100vh; background: #212529; color: white; padding-top: 20px; }
+        .nav-link { color: #adb5bd; }
+        .nav-link:hover, .nav-link.active { color: white; background-color: #343a40; }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-2 sidebar d-none d-md-block">
+            <h4 class="text-center mb-4"><i class="fas fa-chart-line"></i> SoftIntel DSS</h4>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link active" href="#" onclick="showTab('main')"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" onclick="showTab('predict')"><i class="fas fa-brain"></i> Predicción (PM)</a>
+                </li>
+                <li class="nav-item mt-4">
+                    <span class="nav-link small text-uppercase text-muted">Documentación</span>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#"><i class="fas fa-file-alt"></i> Misión & Visión</a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="col-md-10 p-4">
+            
+            <div id="main-section">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Tablero de Control Ejecutivo</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary">Exportar PDF</button>
+                        </div>
+                    </div>
+                </div>
+
+                <h5 class="text-muted mb-3">KPIs Operativos (Alineados a la Misión)</h5>
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card kpi-card shadow-sm p-3">
+                            <h6 class="text-muted">Ingresos Totales</h6>
+                            <div class="kpi-value" id="kpi-revenue">Cargando...</div>
+                            <small class="text-success"><i class="fas fa-arrow-up"></i> Actualizado hoy</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card kpi-card shadow-sm p-3" style="border-left-color: #198754;">
+                            <h6 class="text-muted">ROI Promedio</h6>
+                            <div class="kpi-value" id="kpi-roi">-</div>
+                            <small class="text-muted">Rentabilidad</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card kpi-card shadow-sm p-3" style="border-left-color: #dc3545;">
+                            <h6 class="text-muted">Densidad Defectos (x1k hrs)</h6>
+                            <div class="kpi-value" id="kpi-defects">-</div>
+                            <small class="text-danger">Meta: < 0.5</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card kpi-card shadow-sm p-3" style="border-left-color: #ffc107;">
+                            <h6 class="text-muted">Proyectos Activos</h6>
+                            <div class="kpi-value" id="kpi-projects">-</div>
+                            <small class="text-muted">Base Instalada</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-white">
+                                <strong>Tendencia de Calidad (Perspectiva Procesos Internos)</strong>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="trendChart" height="100"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-white">
+                                <strong>Ingresos por Cliente (Perspectiva Cliente)</strong>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="clientChart" height="220"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-white">
+                                <strong>Balanced Scorecard - OKRs Status</strong>
+                            </div>
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Perspectiva</th>
+                                        <th>Objetivo (OKR)</th>
+                                        <th>Meta</th>
+                                        <th>Estado Actual</th>
+                                        <th>Semáforo</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Financiera</td>
+                                        <td>Incrementar rentabilidad anual</td>
+                                        <td>20%</td>
+                                        <td><span id="bsc-roi">Cargando...</span></td>
+                                        <td><span class="badge bg-success">En Meta</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Clientes</td>
+                                        <td>Retención de Clientes Estratégicos</td>
+                                        <td>95%</td>
+                                        <td>98% (Simulado)</td>
+                                        <td><span class="badge bg-success">Excelente</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Procesos</td>
+                                        <td>Reducción de Tasa de Defectos</td>
+                                        <td>< 1.0</td>
+                                        <td><span id="bsc-defects">Cargando...</span></td>
+                                        <td><span class="badge bg-warning text-dark">Atención</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Aprendizaje</td>
+                                        <td>Horas de Capacitación IA</td>
+                                        <td>500 hrs</td>
+                                        <td>320 hrs</td>
+                                        <td><span class="badge bg-info">En Progreso</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="predict-section" style="display: none;">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2 text-primary">Simulador de Defectos (Modelo Rayleigh)</h1>
+                    <span class="badge bg-secondary">Uso Exclusivo Project Managers</span>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card shadow-sm p-4">
+                            <form id="predictionForm">
+                                <div class="mb-3">
+                                    <label for="projectHours" class="form-label">Esfuerzo Estimado (Horas Hombre)</label>
+                                    <input type="number" class="form-control" id="projectHours" value="1500">
+                                    <div class="form-text">Basado en la estimación del Sprint 0.</div>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100">Calcular Predicción</button>
+                            </form>
+                            <hr>
+                            <div class="alert alert-info mt-3">
+                                <strong>Resultado:</strong><br>
+                                Se estiman <span id="pred-total" class="fw-bold fs-4">0</span> defectos totales durante el ciclo de vida.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="card shadow-sm">
+                            <div class="card-header">Curva de Descubrimiento de Defectos (PDF)</div>
+                            <div class="card-body">
+                                <canvas id="predictChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="docs-section" style="display: none;">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Marco Estratégico</h1>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <div class="card shadow-sm border-primary">
+                            <div class="card-body">
+                                <h3 class="card-title text-primary"><i class="fas fa-bullseye"></i> Misión</h3>
+                                <p class="card-text lead">
+                                    "Desarrollar soluciones de software de alta calidad que optimicen los procesos de nuestros clientes mediante la innovación tecnológica, la eficiencia operativa y la mejora continua; ofreciendo productos sostenibles, escalables y alineados con las necesidades de negocio mientras se promueve la trazabilidad, la colaboración interdisciplinaria y el uso ético de los datos."
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card shadow-sm border-success">
+                            <div class="card-body">
+                                <h3 class="card-title text-success"><i class="fas fa-eye"></i> Visión</h3>
+                                <p class="card-text lead">
+                                    "Ser una empresa líder en el desarrollo de software inteligente que impulse la transformación digital a través de soluciones confiables, medibles y centradas en la toma de decisiones basadas en datos. Aspiramos a consolidarnos como un referente en la creación de plataformas donde la analítica de desempeño, la gestión del conocimiento y la automatización se integren para orientar la estrategia empresarial hacia la excelencia y la innovación sostenible."
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- Lógica de Pestañas ---
+    function showTab(tabName) {
+        document.getElementById('main-section').style.display = tabName === 'main' ? 'block' : 'none';
+        document.getElementById('predict-section').style.display = tabName === 'predict' ? 'block' : 'none';
+        // Update nav active state (simple logic)
+        document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+        event.target.closest('.nav-link').classList.add('active');
+    }
+
+    // --- Cargar Datos del Dashboard ---
+    async function loadDashboard() {
+        try {
+            const response = await fetch('/api/kpi-data');
+            const data = await response.json();
+
+            // Llenar Tarjetas
+            document.getElementById('kpi-revenue').innerText = data.kpis.revenue;
+            document.getElementById('kpi-roi').innerText = data.kpis.roi;
+            document.getElementById('kpi-defects').innerText = data.kpis.defect_density;
+            document.getElementById('kpi-projects').innerText = data.kpis.projects;
+
+            // Llenar BSC Table
+            document.getElementById('bsc-roi').innerText = data.kpis.roi;
+            document.getElementById('bsc-defects').innerText = data.kpis.defect_density;
+
+            // Gráfica Tendencia
+            new Chart(document.getElementById('trendChart'), {
+                type: 'line',
+                data: {
+                    labels: data.charts.trend.labels,
+                    datasets: [{
+                        label: 'Defectos Reportados',
+                        data: data.charts.trend.errors,
+                        borderColor: '#dc3545',
+                        tension: 0.4,
+                        fill: true,
+                        backgroundColor: 'rgba(220, 53, 69, 0.1)'
+                    }]
+                },
+                options: { responsive: true }
+            });
+
+            // Gráfica Clientes
+            new Chart(document.getElementById('clientChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: data.charts.clients.labels,
+                    datasets: [{
+                        data: data.charts.clients.data,
+                        backgroundColor: ['#0d6efd', '#6610f2', '#6f42c1', '#d63384', '#dc3545']
+                    }]
+                },
+                options: { responsive: true }
+            });
+
+        } catch (error) {
+            console.error("Error cargando datos:", error);
+        }
+    }
+
+    // --- Lógica de Predicción ---
+    let predictionChart = null;
+
+    document.getElementById('predictionForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const hours = document.getElementById('projectHours').value;
+
+        const response = await fetch('/api/predict', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ hours: hours })
+        });
+        const data = await response.json();
+
+        document.getElementById('pred-total').innerText = data.total_predicted_defects;
+
+        // Renderizar Gráfica Rayleigh
+        const ctx = document.getElementById('predictChart').getContext('2d');
+        if (predictionChart) predictionChart.destroy();
+
+        predictionChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.chart_labels,
+                datasets: [{
+                    label: 'Probabilidad de Defectos (Densidad)',
+                    data: data.chart_data,
+                    borderColor: '#0d6efd',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    fill: true,
+                    backgroundColor: 'rgba(13, 110, 253, 0.2)'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: { display: true, text: `Modelo basado en Sigma: ${data.sigma_used.toFixed(4)}` }
+                },
+                scales: {
+                    x: { title: { display: true, text: 'Tiempo de Proyecto (Horas)' } },
+                    y: { title: { display: true, text: 'Intensidad de Defectos' } }
+                }
+            }
+        });
+    });
+
+    // Iniciar
+    loadDashboard();
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
