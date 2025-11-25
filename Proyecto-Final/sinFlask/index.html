@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DSS - Software Intelligence</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* ESTETICA DE LA VERSION 2 (Mejorada) */
+        body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        /* Sidebar Oscuro y Elegante */
+        .sidebar { height: 100vh; background: #212529; color: white; padding-top: 20px; position: fixed; width: 250px; z-index: 1000; transition: all 0.3s; }
+        .main-content { margin-left: 250px; padding: 30px; transition: all 0.3s; }
+        
+        /* Links del Menu */
+        .nav-link { color: #adb5bd; cursor: pointer; padding: 15px 20px; font-size: 1.05rem; transition: all 0.2s; }
+        .nav-link:hover, .nav-link.active { color: white; background-color: #0d6efd; border-radius: 0 25px 25px 0; }
+        .nav-link i { margin-right: 12px; width: 25px; text-align: center; }
+        
+        /* Tarjetas (Cards) Limpias */
+        .card { border: none; border-radius: 12px; shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 25px; background: white; transition: transform 0.2s; }
+        .card:hover { transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
+        
+        /* KPIs con Borde Izquierdo (Como te gustaba) */
+        .kpi-card { border-left: 5px solid #0d6efd; }
+        .kpi-value { font-size: 2.2rem; font-weight: 700; color: #2c3e50; }
+        .kpi-label { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: #6c757d; font-weight: 600; }
+        
+        /* Controles OLAP */
+        .filter-label { font-size: 0.75rem; font-weight: 700; color: #6c757d; text-transform: uppercase; margin-bottom: 5px; }
+        .form-select { border-radius: 8px; border: 1px solid #dee2e6; background-color: #f8f9fa; }
+        .form-select:focus { border-color: #0d6efd; box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25); }
+
+        /* Scroll limpio para tablas */
+        .table-responsive::-webkit-scrollbar { width: 6px; height: 6px; }
+        .table-responsive::-webkit-scrollbar-thumb { background: #ced4da; border-radius: 3px; }
+        .table-responsive::-webkit-scrollbar-track { background: #f1f1f1; }
+
+        /* Badge Status */
+        .badge-status { padding: 6px 10px; font-weight: 500; letter-spacing: 0.5px; }
+
+        /* Ajustes Responsivos */
+        @media (max-width: 768px) {
+            .sidebar { margin-left: -250px; }
+            .sidebar.active { margin-left: 0; }
+            .main-content { margin-left: 0; padding: 15px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="sidebar d-flex flex-column" id="sidebar">
+    <h3 class="text-center mb-4 mt-2 fw-bold text-white"><i class="fas fa-cube"></i> SoftIntel DSS</h3>
+    <ul class="nav flex-column">
+        <li class="nav-item">
+            <a class="nav-link active" onclick="showTab('main')">
+                <i class="fas fa-chart-pie"></i> Dashboard General
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" onclick="showTab('olap')">
+                <i class="fas fa-filter"></i> Análisis OLAP
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" onclick="tryAccessPrediction()">
+                <i class="fas fa-brain"></i> Predicción (PM)
+            </a>
+        </li>
+        <li class="nav-item mt-auto">
+            <div class="border-top my-3 mx-3 border-secondary"></div>
+        </li>
+        <li class="nav-item mb-4">
+            <a class="nav-link" onclick="showTab('docs')">
+                <i class="fas fa-book"></i> Misión & Visión
+            </a>
+        </li>
+    </ul>
+</div>
+
+<div class="main-content">
+    
+    <div id="main-section" class="fade-in">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="h3 fw-bold text-dark">Tablero de Control Estratégico</h2>
+                <p class="text-muted mb-0">Monitorización de KPIs y OKRs en tiempo real</p>
+            </div>
+            <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill"><i class="fas fa-database"></i> Conectado a Data Warehouse</span>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-xl-3 col-md-6">
+                <div class="card kpi-card p-4 h-100">
+                    <div class="kpi-label">Ingresos Totales</div>
+                    <div class="kpi-value mt-2" id="kpi-revenue">...</div>
+                    <small class="text-success fw-bold"><i class="fas fa-arrow-up"></i> Acumulado</small>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6">
+                <div class="card kpi-card p-4 h-100" style="border-left-color: #198754;">
+                    <div class="kpi-label">ROI Promedio</div>
+                    <div class="kpi-value mt-2" id="kpi-roi">...</div>
+                    <small class="text-muted">Rentabilidad Operativa</small>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6">
+                <div class="card kpi-card p-4 h-100" style="border-left-color: #dc3545;">
+                    <div class="kpi-label">Densidad Defectos</div>
+                    <div class="kpi-value mt-2" id="kpi-defects">...</div>
+                    <small class="text-danger fw-bold">Defectos / 1000 hrs</small>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6">
+                <div class="card kpi-card p-4 h-100" style="border-left-color: #ffc107;">
+                    <div class="kpi-label">Proyectos Activos</div>
+                    <div class="kpi-value mt-2" id="kpi-projects">...</div>
+                    <small class="text-muted">Cartera Actual</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-lg-8">
+                <div class="card p-4 h-100">
+                    <h5 class="card-title fw-bold mb-4 text-secondary">Tendencia de Calidad (Errores Reportados)</h5>
+                    <div style="position: relative; height: 300px; width: 100%;">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card p-4 h-100">
+                    <h5 class="card-title fw-bold mb-4 text-secondary">Ingresos Top Clientes</h5>
+                    <div style="position: relative; height: 250px; width: 100%;">
+                         <canvas id="clientChart"></canvas>
+                    </div>
+                    <hr>
+                    <div class="text-center small text-muted">Perspectiva de Cliente</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-12">
+                <div class="card p-4">
+                    <h5 class="card-title fw-bold mb-3">Balanced Scorecard (Seguimiento de OKRs)</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Perspectiva</th>
+                                    <th>Objetivo Estratégico (OKR)</th>
+                                    <th>Meta</th>
+                                    <th>Estado Actual</th>
+                                    <th>Semáforo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="badge bg-primary bg-opacity-10 text-primary">Financiera</span></td>
+                                    <td>Incrementar rentabilidad operativa</td>
+                                    <td><strong>20%</strong></td>
+                                    <td class="fw-bold" id="bsc-roi">...</td>
+                                    <td><span class="badge bg-success badge-status">Cumplido</span></td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge bg-info bg-opacity-10 text-info">Clientes</span></td>
+                                    <td>Retención de Clientes Estratégicos</td>
+                                    <td><strong>95%</strong></td>
+                                    <td class="fw-bold">98%</td>
+                                    <td><span class="badge bg-success badge-status">Excelente</span></td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge bg-warning bg-opacity-10 text-dark">Procesos</span></td>
+                                    <td>Reducción Tasa de Defectos</td>
+                                    <td><strong>&lt; 1.0</strong></td>
+                                    <td class="fw-bold" id="bsc-defects">...</td>
+                                    <td><span class="badge bg-warning text-dark badge-status">Atención</span></td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge bg-secondary bg-opacity-10 text-secondary">Aprendizaje</span></td>
+                                    <td>Capacitación en Data & AI</td>
+                                    <td><strong>500 hrs</strong></td>
+                                    <td class="fw-bold">320 hrs</td>
+                                    <td><span class="badge bg-info text-dark badge-status">En Progreso</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="olap-section" style="display: none;">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="h3 fw-bold text-dark">Explorador OLAP</h2>
+                <p class="text-muted mb-0">Operaciones de "Slice & Dice" multidimensional</p>
+            </div>
+        </div>
+
+        <div class="card p-4 mb-4 border-start border-5 border-primary">
+            <div class="row align-items-end g-3">
+                <div class="col-md-3">
+                    <div class="filter-label">SLICE: Filtrar por Año</div>
+                    <select class="form-select shadow-sm" id="olapYear">
+                        <option value="all">Todos los Años (Histórico)</option>
+                        </select>
+                </div>
+                <div class="col-md-3">
+                    <div class="filter-label">DICE: Dimensión</div>
+                    <select class="form-select shadow-sm" id="olapDim">
+                        <option value="client">Por Cliente</option>
+                        <option value="team">Por Equipo de Desarrollo</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <div class="filter-label">METRICA: Valor</div>
+                    <select class="form-select shadow-sm" id="olapMetric">
+                        <option value="revenue">Ingresos Facturados ($)</option>
+                        <option value="errors">Total de Defectos (Qty)</option>
+                        <option value="hours">Horas Invertidas (Hrs)</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button class="btn btn-primary w-100 shadow-sm fw-bold" onclick="updateOlapView()">
+                        <i class="fas fa-sync-alt me-2"></i> Actualizar Cubo
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="card p-4 h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="fw-bold text-secondary" id="olapChartTitle">Visualización Dinámica</h5>
+                        <button class="btn btn-sm btn-outline-secondary"><i class="fas fa-download"></i></button>
+                    </div>
+                    <div style="position: relative; height: 350px; width: 100%;">
+                        <canvas id="olapChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card p-4 h-100">
+                    <h5 class="fw-bold text-secondary mb-3">Detalle (Drill-down)</h5>
+                    <div class="table-responsive" style="max-height: 350px; overflow-y: auto;">
+                        <table class="table table-hover table-sm" id="olapTable">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th>Dimensión</th>
+                                    <th class="text-end">Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="predict-section" style="display: none;">
+        <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+            <div>
+                <h2 class="h3 fw-bold text-primary">Modelo Rayleigh</h2>
+                <p class="text-muted">Herramienta de estimación de defectos para PMs</p>
+            </div>
+            <button class="btn btn-outline-danger btn-sm fw-bold" onclick="logoutPrediction()">
+                <i class="fas fa-lock me-2"></i> Cerrar Sesión
+            </button>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card p-4 shadow bg-light border-0">
+                    <h5 class="mb-3 text-dark fw-bold"><i class="fas fa-sliders-h me-2"></i> Parámetros</h5>
+                    <form id="predictionForm">
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-muted small text-uppercase">Esfuerzo Estimado (Horas)</label>
+                            <input type="number" class="form-control form-control-lg" id="projectHours" value="1000" min="100">
+                            <div class="form-text">Input del Sprint 0</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 btn-lg shadow-sm">
+                            <i class="fas fa-calculator me-2"></i> Calcular Riesgo
+                        </button>
+                    </form>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="alert alert-primary border-0 shadow-sm text-center">
+                        <small class="text-uppercase fw-bold opacity-75">Defectos Totales Estimados</small>
+                        <div class="display-4 fw-bold mt-2" id="pred-total">0</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-8">
+                <div class="card h-100 p-4">
+                    <h5 class="card-title fw-bold mb-4 text-secondary">Curva de Descubrimiento de Defectos (PDF)</h5>
+                    <div class="alert alert-light small text-muted border mb-3">
+                        <i class="fas fa-info-circle me-2"></i> El modelo utiliza el parámetro <strong>Sigma</strong> calculado de la base de datos histórica para proyectar la intensidad de errores.
+                    </div>
+                    <div style="position: relative; height: 350px; width: 100%;">
+                        <canvas id="predictChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="docs-section" style="display: none;">
+        <h2 class="h3 fw-bold mb-4">Identidad Corporativa</h2>
+        
+        <div class="card mb-4 border-0 shadow-sm" style="background: linear-gradient(to right, #ffffff, #f8f9fa);">
+            <div class="card-body p-5 border-start border-5 border-primary">
+                <h3 class="text-primary mb-3 fw-bold"><i class="fas fa-bullseye me-2"></i> Misión</h3>
+                <p class="lead text-dark" style="line-height: 1.8;">
+                    "Desarrollar soluciones de software de alta calidad que optimicen los procesos de nuestros clientes mediante la innovación tecnológica, la eficiencia operativa y la mejora continua; ofreciendo productos sostenibles, escalables y alineados con las necesidades de negocio mientras se promueve la trazabilidad, la colaboración interdisciplinaria y el uso ético de los datos."
+                </p>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm" style="background: linear-gradient(to right, #ffffff, #f8f9fa);">
+            <div class="card-body p-5 border-start border-5 border-success">
+                <h3 class="text-success mb-3 fw-bold"><i class="fas fa-eye me-2"></i> Visión</h3>
+                <p class="lead text-dark" style="line-height: 1.8;">
+                    "Ser una empresa líder en el desarrollo de software inteligente que impulse la transformación digital a través de soluciones confiables, medibles y centradas en la toma de decisiones basadas en datos. Aspiramos a consolidarnos como un referente en la creación de plataformas donde la analítica de desempeño, la gestión del conocimiento y la automatización se integren para orientar la estrategia empresarial hacia la excelencia y la innovación sostenible."
+                </p>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="modal fade" id="passwordModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-user-shield me-2"></i> Acceso Restringido</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="text-muted mb-3">Esta herramienta es exclusiva para Project Managers.</p>
+                <div class="mb-3">
+                    <label for="passwordInput" class="form-label fw-bold">Contraseña de Equipo</label>
+                    <input type="password" class="form-control form-control-lg" id="passwordInput" placeholder="••••••••">
+                    <div class="invalid-feedback" id="passwordError">
+                        Contraseña incorrecta.
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary px-4" onclick="verifyPassword()">Acceder</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // --- ESTADO GLOBAL ---
+    let globalData = null;
+    let charts = {}; 
+    let isAuthorized = false;
+    const PASSWORD_SECRET = "equipoPassword";
+    let modalObj;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        modalObj = new bootstrap.Modal(document.getElementById('passwordModal'));
+        loadData();
+    });
+
+    // --- CARGA DE DATOS ---
+    async function loadData() {
+        try {
+            const res = await fetch('dashboard_data.json');
+            if(!res.ok) throw new Error("JSON no encontrado");
+            globalData = await res.json();
+            
+            initDashboard();
+            initOlapFilters();
+        } catch (e) {
+            console.error(e);
+            alert("No se encontraron datos. Ejecuta export_data.py primero.");
+        }
+    }
+
+    function initDashboard() {
+        // Renderizar KPIs con animacion simple
+        document.getElementById('kpi-revenue').innerText = "$" + globalData.kpis.revenue.toLocaleString();
+        document.getElementById('kpi-roi').innerText = globalData.kpis.roi + "%";
+        document.getElementById('kpi-defects').innerText = globalData.kpis.defect_density;
+        document.getElementById('kpi-projects').innerText = globalData.kpis.projects;
+        
+        // BSC Table Values
+        document.getElementById('bsc-roi').innerText = globalData.kpis.roi + "%";
+        document.getElementById('bsc-defects').innerText = globalData.kpis.defect_density;
+
+        // Charts Dashboard (Colores v2: Rojo para errores, Azul para clientes)
+        renderChart('trendChart', 'line', globalData.charts.trend_labels, globalData.charts.trend_data, 'Defectos', '#dc3545');
+        renderChart('clientChart', 'doughnut', globalData.charts.clients_labels, globalData.charts.clients_data, 'Ingresos', ['#0d6efd', '#6610f2', '#6f42c1', '#d63384', '#dc3545']);
+    }
+
+    // --- LOGICA OLAP ---
+    function initOlapFilters() {
+        if(!globalData.olap_cube) return;
+        
+        const years = [...new Set(globalData.olap_cube.map(item => item.year))].sort();
+        const yearSel = document.getElementById('olapYear');
+        years.forEach(y => {
+            let opt = document.createElement('option');
+            opt.value = y; opt.innerText = y; yearSel.appendChild(opt);
+        });
+        updateOlapView();
+    }
+
+    function updateOlapView() {
+        if(!globalData.olap_cube) return;
+        const selectedYear = document.getElementById('olapYear').value;
+        const dimension = document.getElementById('olapDim').value; 
+        const metric = document.getElementById('olapMetric').value; 
+
+        // Slice
+        let filteredData = globalData.olap_cube;
+        if (selectedYear !== 'all') filteredData = filteredData.filter(d => d.year == selectedYear);
+
+        // Dice (Agrupación)
+        let grouped = {};
+        filteredData.forEach(row => {
+            let key = (dimension === 'client') ? row.client_name : row.team_name;
+            if(!grouped[key]) grouped[key] = 0;
+            grouped[key] += row[metric]; 
+        });
+
+        // Ordenar
+        const entries = Object.entries(grouped).sort((a,b) => b[1] - a[1]);
+        
+        // Render Chart
+        // Color basado en métrica: Azul(Ingresos), Rojo(Errores), Verde(Horas)
+        let color = '#0d6efd';
+        if(metric === 'errors') color = '#dc3545';
+        if(metric === 'hours') color = '#198754';
+        
+        renderChart('olapChart', 'bar', entries.map(e=>e[0]), entries.map(e=>e[1]), metric.toUpperCase(), color);
+
+        // Render Table
+        const tbody = document.getElementById('olapTable').querySelector('tbody');
+        tbody.innerHTML = '';
+        let total = 0;
+        entries.forEach(e => {
+            tbody.innerHTML += `<tr><td>${e[0]}</td><td class="text-end fw-bold">${e[1].toLocaleString()}</td></tr>`;
+            total += e[1];
+        });
+        tbody.innerHTML += `<tr class="table-secondary fw-bold"><td>TOTAL</td><td class="text-end">${total.toLocaleString()}</td></tr>`;
+        
+        let dimText = dimension === 'client' ? 'Clientes' : 'Equipos';
+        let yearText = selectedYear === 'all' ? 'Histórico' : selectedYear;
+        document.getElementById('olapChartTitle').innerText = `Análisis: ${metric} por ${dimText} (${yearText})`;
+    }
+
+    // --- CHART GENERICO ---
+    function renderChart(canvasId, type, labels, data, labelName, colors) {
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        if (charts[canvasId]) charts[canvasId].destroy();
+
+        let datasetConfig = {
+            label: labelName,
+            data: data,
+            backgroundColor: colors,
+            borderColor: type === 'line' ? colors : 'transparent',
+            borderWidth: 2,
+            tension: 0.3,
+            fill: type === 'line'
+        };
+        
+        // Opacidad para lineas
+        if(type === 'line') datasetConfig.backgroundColor = colors + '20'; // Hex opacity hack (aprox) or simple transparent
+        if(type === 'line' && colors === '#dc3545') datasetConfig.backgroundColor = 'rgba(220, 53, 69, 0.1)';
+
+        if (type === 'bar') datasetConfig.backgroundColor = colors;
+
+        charts[canvasId] = new Chart(ctx, {
+            type: type,
+            data: { labels: labels, datasets: [datasetConfig] },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: type === 'doughnut' } },
+                scales: type === 'doughnut' ? {} : { y: { beginAtZero: true } }
+            }
+        });
+    }
+
+    // --- RAYLEIGH (Calculadora) ---
+    document.getElementById('predictionForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        calcRayleigh();
+    });
+
+    function calcRayleigh() {
+        if(!globalData) return;
+        const hours = parseFloat(document.getElementById('projectHours').value);
+        const density = globalData.kpis.defect_density / 1000;
+        let total = Math.round(hours * density) || 1;
+        document.getElementById('pred-total').innerText = total;
+
+        const labels = [], data = [];
+        const sigma_t = hours * 0.4; 
+        for(let i=0; i<=20; i++) {
+            let t = (hours/20)*i;
+            labels.push(Math.round(t));
+            let val = (t / (sigma_t**2)) * Math.exp(-(t**2)/(2*sigma_t**2));
+            data.push(val * total * (hours/1.5)); 
+        }
+        renderChart('predictChart', 'line', labels, data, 'Probabilidad', '#0d6efd');
+    }
+
+    // --- NAVEGACION & SEGURIDAD ---
+    function showTab(tab) {
+        ['main','olap','predict','docs'].forEach(t => document.getElementById(t+'-section').style.display='none');
+        document.getElementById(tab+'-section').style.display='block';
+        
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        if(tab==='main') document.querySelectorAll('.nav-link')[0].classList.add('active');
+        if(tab==='olap') document.querySelectorAll('.nav-link')[1].classList.add('active');
+        if(tab==='predict') document.querySelectorAll('.nav-link')[2].classList.add('active');
+        if(tab==='docs') document.querySelectorAll('.nav-link')[3].classList.add('active');
+    }
+
+    function tryAccessPrediction() {
+        if(isAuthorized) showTab('predict');
+        else {
+            document.getElementById('passwordInput').value = '';
+            document.getElementById('passwordInput').classList.remove('is-invalid');
+            modalObj.show();
+        }
+    }
+    
+    function verifyPassword() {
+        if(document.getElementById('passwordInput').value === PASSWORD_SECRET) {
+            isAuthorized = true; modalObj.hide(); showTab('predict');
+        } else {
+            document.getElementById('passwordInput').classList.add('is-invalid');
+        }
+    }
+    
+    function logoutPrediction() { isAuthorized=false; showTab('main'); }
+    document.getElementById('passwordInput').addEventListener('keypress', (e)=>{if(e.key==='Enter') verifyPassword()});
+
+</script>
+</body>
+</html>
